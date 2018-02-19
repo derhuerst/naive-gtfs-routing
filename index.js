@@ -8,21 +8,33 @@ const servicesByTrip = require('./services-by-trip.json')
 const addTaskWithPriority = require('./lib/add-task-with-priority')
 const segmentToJourney = require('./lib/segment-to-journey')
 
-const MAX_DURATION = 3600
-const TRANSFER_DURATION = 30
-
 const hasProp = Object.prototype.hasOwnProperty
+const is = v => v !== null && v !== undefined
+const isObj = o => o !== null && 'object' === typeof o && !Array.isArray(o)
 
-const computeJourneys = (origin, destination, start) => {
+const defaults = {
+	transferDuration: 30,
+	maxTransfers: 3,
+	maxDuration: 2 * 60 * 60,
+	results: 10
+}
+
+const computeJourneys = (origin, destination, start, opt = {}) => {
+	if (!is(origin)) throw new Error('missing origin.')
+	if (!is(destination)) throw new Error('missing destination.')
+	if ('number' !== typeof start) throw new Error('start must be a number.')
+	if (!isObj(opt)) throw new Error('opt must be an object.')
+	opt = Object.assign({}, defaults, opt)
+
 	const firstSegment = {
 		first: true,
 
 		stop: origin,
-		arrival: start - TRANSFER_DURATION,
+		arrival: start - opt.transferDuration,
 		duration: 0,
 		tripId: null,
 
-		timeLeft: MAX_DURATION,
+		timeLeft: opt.maxDuration,
 		transfers: 0,
 		blacklist: [origin],
 		prevSegment: null
@@ -30,17 +42,14 @@ const computeJourneys = (origin, destination, start) => {
 
 	const queue = [[0, firstSegment]]
 	const results = []
-	const stopsVisited = Object.create(null) // by ID
 
 	const checkConnection = (s, sched, fromI, toI) => {
 		const stop = sched.stops[toI]
-		if (stopsVisited[sched.id + '\xff' + stop]) return null
-		stopsVisited[stop] = true
 
 		const depRelative = sched.departures[fromI]
 		const arrRelative = sched.arrivals[toI]
 		const duration = arrRelative - depRelative
-		if (duration > MAX_DURATION) return null
+		if (duration > s.timeLeft) return null
 
 		for (let tripId in sched.tripOffsets) {
 			if (!hasProp.call(sched.tripOffsets, tripId)) continue
@@ -52,9 +61,9 @@ const computeJourneys = (origin, destination, start) => {
 				// todo: optimise, because `days` is sorted
 
 				const dep = day + offset + depRelative
-				if (dep < (s.arrival + TRANSFER_DURATION)) continue
-
+				if (dep < (s.arrival + opt.transferDuration)) continue
 				const arr = day + offset + arrRelative
+				if (arr > (start + opt.maxDuration)) continue
 				const sinceLastArr = arr - (s.first ? start : s.arrival)
 				if (sinceLastArr > s.timeLeft) continue
 
@@ -77,16 +86,21 @@ const computeJourneys = (origin, destination, start) => {
 				}
 
 				if (stop === destination) results.push(nextSegment)
-				else {
-					// todo: estimate priority by duration & GPS distance
-					addTaskWithPriority(queue, 0, nextSegment)
+				else if (nextSegment.transfers <= opt.maxTransfers) {
+					const prio = s.transfers / opt.maxTransfers
+					const i = addTaskWithPriority(queue, prio, nextSegment)
 				}
 			}
 		}
 	}
 
-	while (queue.length > 0) {
+	const stopsVisited = Object.create(null) // timestamps, by stop ID
+
+	while (queue.length > 0 && results.length < opt.results) {
 		const s = queue.shift()[1]
+		if (stopsVisited[s.stop] && stopsVisited[s.stop] < s.arrival) continue
+		stopsVisited[s.stop] = s.arrival
+
 		for (let schedId of schedulesAt[s.stop]) {
 			const sched = schedules[schedId]
 
