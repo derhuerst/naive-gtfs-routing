@@ -11,15 +11,40 @@
 
 ## Installing
 
+Because this project is still a work in progress, you have to build the index by yourself.
+
 ```shell
-npm install naive-gtfs-routing
+git clone https://gtihub.com/derhuerst/naive-gtfs-routing.git
+cd naive-gtfs-routing
+npm install
+npm run build
 ```
 
 
 ## Usage
 
 ```js
-todo
+const computeJourneys = require('naive-gtfs-routing')
+
+const stockholm = 'FLIXBUS:3978'
+const oberstdorf = 'FLIXBUS:101'
+const when = 1523037600 // 2018-04-06T18:00:00.000Z
+const opt = {
+	maxTransfers: 2,
+	maxDuration: 2 * 24 * 60 * 60
+}
+
+const journeys = computeJourneys(stockholm, oberstdorf, when, opt)
+
+for (let journey of journeys) {
+	console.log({
+		origin: journey.origin,
+		departure: journey.departure,
+		destination: journey.destination,
+		arrival: journey.arrival,
+		legs: journey.legs.map(l => l.tripId)
+	})
+}
 ```
 
 
