@@ -4,7 +4,8 @@
 	"version": "0.1.0",
 	"main": "index.js",
 	"files": [
-		"index.js"
+		"index.js",
+		"lib"
 	],
 	"keywords": [
 		"routing",
@@ -21,8 +22,7 @@
 	"engines": {
 		"node": ">=6"
 	},
-	"dependencies": {
-	},
+	"dependencies": {},
 	"devDependencies": {
 		"gtfs-utils": "^0.4.0-alpha.4",
 		"sample-gtfs-feed": "^0.2.3",

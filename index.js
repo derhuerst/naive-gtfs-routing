@@ -5,13 +5,14 @@ const schedules = require('./schedules.json')
 const services = require('./services.json')
 const servicesByTrip = require('./services-by-trip.json')
 
+const segmentToJourney = require('./lib/segment-to-journey')
+
 const MAX_DURATION = 3600
 const TRANSFER_DURATION = 30
 
 const hasProp = Object.prototype.hasOwnProperty
 
 const computeJourneys = (origin, destination, start) => {
-	const results = []
 	const queue = [{
 		first: true,
 
@@ -25,7 +26,7 @@ const computeJourneys = (origin, destination, start) => {
 		blacklist: [origin],
 		prevSegment: null
 	}]
-
+	const results = []
 	const stopsVisited = Object.create(null) // by ID
 
 	const checkConnection = (s, sched, fromI, toI) => {
@@ -66,7 +67,10 @@ const computeJourneys = (origin, destination, start) => {
 					timeLeft: s.timeLeft - sinceLastArr,
 					transfers: s.transfers + 1,
 					blacklist,
-					prevSegment: s
+					prevSegment: s,
+
+					// additonal info for segmentToJourney
+					schedule: sched
 				}
 
 				if (stop === destination) results.push(nextSegment)
@@ -95,6 +99,9 @@ const computeJourneys = (origin, destination, start) => {
 		}
 	}
 
+	for (let i = 0; i < results.length; i++) {
+		results[i] = segmentToJourney(results[i])
+	}
 	return results
 }
 
