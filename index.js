@@ -5,6 +5,7 @@ const schedules = require('./schedules.json')
 const services = require('./services.json')
 const servicesByTrip = require('./services-by-trip.json')
 
+const addTaskWithPriority = require('./lib/add-task-with-priority')
 const segmentToJourney = require('./lib/segment-to-journey')
 
 const MAX_DURATION = 3600
@@ -13,7 +14,7 @@ const TRANSFER_DURATION = 30
 const hasProp = Object.prototype.hasOwnProperty
 
 const computeJourneys = (origin, destination, start) => {
-	const queue = [{
+	const firstSegment = {
 		first: true,
 
 		stop: origin,
@@ -25,7 +26,9 @@ const computeJourneys = (origin, destination, start) => {
 		transfers: 0,
 		blacklist: [origin],
 		prevSegment: null
-	}]
+	}
+
+	const queue = [[0, firstSegment]]
 	const results = []
 	const stopsVisited = Object.create(null) // by ID
 
@@ -74,14 +77,16 @@ const computeJourneys = (origin, destination, start) => {
 				}
 
 				if (stop === destination) results.push(nextSegment)
-				else queue.push(nextSegment)
+				else {
+					// todo: estimate priority by duration & GPS distance
+					addTaskWithPriority(queue, 0, nextSegment)
+				}
 			}
 		}
 	}
 
-	// todo: priority queue
 	while (queue.length > 0) {
-		const s = queue.shift()
+		const s = queue.shift()[1]
 		for (let schedId of schedulesAt[s.stop]) {
 			const sched = schedules[schedId]
 
@@ -93,8 +98,8 @@ const computeJourneys = (origin, destination, start) => {
 
 			for (let i = stopI + 1; i < sched.stops.length; i++) {
 				if (destI === i) continue
-				// todo: estimate priority by duration & GPS distance
-				checkConnection(s, sched, stopI, destI)
+				if (s.blacklist.includes(sched.stops[i])) continue
+				checkConnection(s, sched, stopI, i)
 			}
 		}
 	}
