@@ -1,0 +1,34 @@
+{
+	"name": "naive-gtfs-routing",
+	"description": "A naive routing engine for GTFS data.",
+	"version": "0.1.0",
+	"main": "index.js",
+	"files": [
+		"index.js"
+	],
+	"keywords": [
+		"routing",
+		"engine",
+		"gtfs",
+		"public transport",
+		"transit"
+	],
+	"author": "Jannis R <mail@jannisr.de>",
+	"homepage": "https://github.com/derhuerst/naive-gtfs-routing",
+	"repository": "derhuerst/naive-gtfs-routing",
+	"bugs": "https://github.com/derhuerst/naive-gtfs-routing/issues",
+	"license": "ISC",
+	"engines": {
+		"node": ">=6"
+	},
+	"dependencies": {
+	},
+	"devDependencies": {
+		"tap-min": "^1.2.2",
+		"tape": "^4.8.0"
+	},
+	"scripts": {
+		"test": "env NODE_ENV=dev node test.js | tap-min",
+		"prepublishOnly": "npm run build && npm test"
+	}
+}
