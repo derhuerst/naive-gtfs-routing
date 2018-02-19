@@ -8,3 +8,10 @@ pnpm-debug.log
 
 package-lock.json
 shrinkwrap.yaml
+
+build/*.txt
+
+services-by-trip.json
+services.json
+schedules.json
+schedules-at.json

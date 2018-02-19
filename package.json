@@ -24,10 +24,16 @@
 	"dependencies": {
 	},
 	"devDependencies": {
+		"gtfs-utils": "^0.4.0-alpha.4",
+		"sample-gtfs-feed": "^0.2.3",
 		"tap-min": "^1.2.2",
 		"tape": "^4.8.0"
 	},
 	"scripts": {
+		"download": "cd build; ./download.sh",
+		"convert": "node build/index.js",
+		"cleanup": "build/*.txt",
+		"build": "npm run download && npm run convert && npm run cleanup",
 		"test": "env NODE_ENV=dev node test.js | tap-min",
 		"prepublishOnly": "npm run build && npm test"
 	}
